@@ -13,16 +13,16 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       java_version: ${{ inputs.java_version }}
-      secrets: inherit
+#      secrets: inherit
   unit_tests:
     needs: build
     uses: ./.github/workflows/unit_tests.yml
     with:
       java_version: ${{ inputs.java_version }}
-      secrets: inherit
+#      secrets: inherit
   integration_tests:
     needs: unit_tests
     uses: ./.github/workflows/integration_tests.yml
     with:
       java_version: ${{ inputs.java_version }}
-      secrets: inherit
+#      secrets: inherit
