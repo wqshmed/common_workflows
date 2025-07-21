@@ -10,16 +10,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          node-version: '18'
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
+      - name: Build without tests
+        run: mvn clean install -DskipTests -B
 
   unit_tests:
     needs: build
@@ -28,13 +26,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm ci
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Run unit tests
-        run: npm test
+        run: mvn test -B
