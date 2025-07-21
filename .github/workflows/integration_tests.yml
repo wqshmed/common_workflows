@@ -1,0 +1,25 @@
+name: integration tests
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        required: true
+        type: string
+
+jobs:
+  integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ inputs.java_version }}
+
+      - name: Run integration tests
+        run: mvn verify -PIT -DskipTests
+#        continue-on-error: false

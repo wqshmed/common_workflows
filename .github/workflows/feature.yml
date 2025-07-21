@@ -1,36 +1,28 @@
-name: Feature CI/CD
+name: Feature/Bugfix Branches
 
 on:
   workflow_call:
+    inputs:
+      java_version:
+        default: 17
+        required: false
+        type: string
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Build without tests
-        run: mvn clean install -DskipTests -B
-
+    uses: ./.github/workflows/build.yml
+    with:
+      java_version: ${{ inputs.java_version }}
+      secrets: inherit
   unit_tests:
     needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Run unit tests
-        run: mvn test -B
+    uses: ./.github/workflows/unit_tests.yml
+    with:
+      java_version: ${{ inputs.java_version }}
+      secrets: inherit
+  integration_tests:
+    needs: unit_tests
+    uses: ./.github/workflows/integration_tests.yml
+    with:
+      java_version: ${{ inputs.java_version }}
+      secrets: inherit
