@@ -22,26 +22,90 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       java_version: ${{ inputs.java_version }}
-#      secrets: inherit
 
   unit_tests:
     needs: build
     uses: ./.github/workflows/unit_tests.yml
     with:
       java_version: ${{ inputs.java_version }}
-#      secrets: inherit
 
   integration_tests:
     needs: build
     uses: ./.github/workflows/integration_tests.yml
     with:
       java_version: ${{ inputs.java_version }}
-#      secrets: inherit
 
   sonar_scan:
-    needs: unit_tests
+    needs: build
     uses: ./.github/workflows/sonar_scan.yml
     with:
       java_version: ${{ inputs.java_version }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  dockerize:
+    needs: [unit_tests, integration_tests, sonar_scan]
+    uses: ./.github/workflows/dockerize.yml
+
+  snyk_scan:
+    needs: dockerize
+    runs-on: ubuntu-latest
+    steps:
+      - name: Snyk Scan
+        run: echo "Running Snyk security scan..."
+
+  xray_scan:
+    needs: dockerize
+    runs-on: ubuntu-latest
+    steps:
+      - name: Xray Scan
+        run: echo "Running Xray vulnerability scan..."
+
+  deploy:
+    needs: [snyk_scan, xray_scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to environment
+        run: echo "Deploying to target environment..."
+
+  smoke_regression:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Smoke & Regression Tests
+        run: echo "Executing smoke & regression tests..."
+
+  dev_review_approved:
+    needs: smoke_regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dev Code Review Complete & Approved
+        run: echo "Dev team reviewed & approved."
+
+  qa_review_approved:
+    needs: smoke_regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: QA Review Complete & Approved
+        run: echo "QA team reviewed & approved."
+
+  full_regression:
+    needs: [dev_review_approved, qa_review_approved]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Full Regression Tests
+        run: echo "Running full regression suite..."
+
+  dev_review_for_merge:
+    needs: full_regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dev Review for Merge
+        run: echo "Dev team reviewing for merge..."
+
+  qa_review_for_merge:
+    needs: full_regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: QA Review for Merge
+        run: echo "QA team reviewing for merge..."

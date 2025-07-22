@@ -22,26 +22,97 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       java_version: ${{ inputs.java_version }}
-  #      secrets: inherit
 
   unit_tests:
     needs: build
     uses: ./.github/workflows/unit_tests.yml
     with:
       java_version: ${{ inputs.java_version }}
-  #      secrets: inherit
 
   integration_tests:
     needs: build
     uses: ./.github/workflows/integration_tests.yml
     with:
       java_version: ${{ inputs.java_version }}
-  #      secrets: inherit
 
   sonar_scan:
-    needs: unit_tests
+    needs: build
     uses: ./.github/workflows/sonar_scan.yml
     with:
       java_version: ${{ inputs.java_version }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  dockerize:
+    needs: [unit_tests, integration_tests, sonar_scan]
+    uses: ./.github/workflows/dockerize.yml
+
+  snyk_scan:
+    needs: dockerize
+    runs-on: ubuntu-latest
+    steps:
+      - name: Snyk Scan
+        run: echo "Running Snyk security scan..."
+
+  xray_scan:
+    needs: dockerize
+    runs-on: ubuntu-latest
+    steps:
+      - name: Xray Scan
+        run: echo "Running Xray vulnerability scan..."
+
+  deploy_dev:
+    needs: [snyk_scan, xray_scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to DEV
+        run: echo "Deploying to DEV environment..."
+
+  full_regression_dev:
+    needs: deploy_dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Full Regression after DEV Deploy (Dummy)
+        run: echo "Running full regression on DEV..."
+
+  deploy_test:
+    needs: full_regression_dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to TEST
+        run: echo "Deploying to TEST environment..."
+
+  full_regression_test:
+    needs: deploy_test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Full Regression after TEST Deploy (Dummy)
+        run: echo "Running full regression on TEST..."
+
+  deploy_stage:
+    needs: full_regression_test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to STAGE
+        run: echo "Deploying to STAGE environment..."
+
+  full_regression_stage:
+    needs: deploy_stage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Full Regression after STAGE Deploy
+        run: echo "Running full regression on STAGE..."
+
+  release_go_nogo:
+    needs: full_regression_stage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Go/NoGo
+        run: echo "Final Release Go/NoGo decision point."
+
+  create_release_tag:
+    needs: release_go_nogo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release Tag
+        run: echo "Creating release tag in version control."
