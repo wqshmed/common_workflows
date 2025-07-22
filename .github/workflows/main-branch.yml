@@ -46,6 +46,8 @@ jobs:
   dockerize:
     needs: [unit_tests, integration_tests, sonar_scan]
     uses: ./.github/workflows/dockerize.yml
+    with:
+      java_version: ${{ inputs.java_version }}
 
   snyk_scan:
     needs: dockerize
