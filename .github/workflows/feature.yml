@@ -34,3 +34,9 @@ jobs:
     with:
       java_version: ${{ inputs.java_version }}
 #      secrets: inherit
+
+  sonar_scan:
+    needs: unit_tests
+    uses: ./.github/workflows/sonar_scan.yml
+    with:
+      java_version: ${{ inputs.java_version }}
