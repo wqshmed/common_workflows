@@ -13,29 +13,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Java 17
+      - name: Set up Java ${{ inputs.java_version }}
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: 17
+          java-version: ${{ inputs.java_version }}
 
-      - name: Cache SonarScanner CLI
-        uses: actions/cache@v3
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-
-      - name: Download SonarScanner CLI
-        run: |
-          curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
-          unzip sonar-scanner.zip -d $HOME/
-          echo "$HOME/sonar-scanner-4.8.0.2856-linux/bin" >> $GITHUB_PATH
-
-      - name: Run SonarQube scan
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          JAVA_HOME: /opt/hostedtoolcache/Java_Adopt_jdk/17*/x64  # Force correct Java path
-          PATH: /opt/hostedtoolcache/Java_Adopt_jdk/17*/x64/bin:${{ env.PATH }}
-        run: |
-          java -version  # Check Java version
-          sonar-scanner
+        with:
+          args: >
+            -Dsonar.projectKey=java_crud_service
+            -Dsonar.organization=com.org.gk.tech
+  
