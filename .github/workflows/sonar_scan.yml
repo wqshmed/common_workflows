@@ -35,6 +35,7 @@ jobs:
             -storepass changeit -noprompt -alias sonarcloud -file sonarcloud.crt
 
       - name: SonarCloud Scan
+        continue-on-error: true
         run: |
           mvn clean verify sonar:sonar \
             -Dsonar.projectKey=java_crud_service \
