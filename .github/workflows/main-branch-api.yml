@@ -1,0 +1,47 @@
+name: Main Branch
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        default: 17
+        required: false
+        type: string
+    secrets:
+      SONAR_TOKEN:
+        required: false
+
+jobs:
+  checkstyle:
+    uses: ./.github/workflows/checkstyle.yml
+    with:
+      java_version: ${{ inputs.java_version }}
+
+  build:
+    needs: checkstyle
+    uses: ./.github/workflows/build.yml
+    with:
+      java_version: ${{ inputs.java_version }}
+  #      secrets: inherit
+
+  unit_tests:
+    needs: build
+    uses: ./.github/workflows/unit_tests.yml
+    with:
+      java_version: ${{ inputs.java_version }}
+  #      secrets: inherit
+
+  integration_tests:
+    needs: build
+    uses: ./.github/workflows/integration_tests.yml
+    with:
+      java_version: ${{ inputs.java_version }}
+  #      secrets: inherit
+
+  sonar_scan:
+    needs: unit_tests
+    uses: ./.github/workflows/sonar_scan.yml
+    with:
+      java_version: ${{ inputs.java_version }}
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
