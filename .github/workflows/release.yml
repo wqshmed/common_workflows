@@ -1,0 +1,46 @@
+name: Release Tag CI/CD
+
+on:
+  workflow_call:
+
+jobs:
+  change_request_approval:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Change Request Approval (Dummy)
+        run: echo "Waiting for Change Request Approval..."
+
+  release_tag_docker:
+    needs: change_request_approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Tag Docker (Dummy)
+        run: echo "Building and tagging Docker image for release..."
+
+  prod_deploy_approval:
+    needs: release_tag_docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Production Deploy Approval (Dummy)
+        run: echo "Waiting for Production Deployment Approval..."
+
+  prod_deploy_east:
+    needs: prod_deploy_approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Production Deploy - East (Dummy)
+        run: echo "Deploying to Production (East Region)..."
+
+  prod_deploy_central:
+    needs: prod_deploy_east
+    runs-on: ubuntu-latest
+    steps:
+      - name: Production Deploy - Central (Dummy)
+        run: echo "Deploying to Production (Central Region)..."
+
+  catalog_api:
+    needs: prod_deploy_central
+    runs-on: ubuntu-latest
+    steps:
+      - name: Catalog API Deployment (Dummy)
+        run: echo "Deploying Catalog API..."
