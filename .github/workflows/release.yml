@@ -2,6 +2,11 @@ name: Release Tag CI/CD
 
 on:
   workflow_call:
+    inputs:
+      java_version:
+        default: 17
+        required: false
+        type: string
 
 jobs:
   change_request_approval:
