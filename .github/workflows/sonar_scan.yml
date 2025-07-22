@@ -29,5 +29,5 @@ jobs:
         with:
           args: >
             -Dsonar.projectKey=java_crud_service
-            -Dsonar.organization=com.org.gk.tech
+            -Dsonar.organization=wqshmed-sonar
   
