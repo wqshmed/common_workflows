@@ -23,11 +23,9 @@ jobs:
           java-version: ${{ inputs.java_version }}
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=java_crud_service
-            -Dsonar.organization=wqshmed-sonar
-  
+        run: mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          -Dsonar.projectKey=java_crud_service \
+          -Dsonar.organization=wqshmed-sonar \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
