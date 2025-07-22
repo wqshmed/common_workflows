@@ -1,0 +1,29 @@
+name: checkstyle
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        required: true
+        type: string
+
+jobs:
+  checkstyle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java ${{ inputs.java_version }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: ${{ inputs.java_version }}
+
+      - name: Run Checkstyle
+        run: |
+          # Download Checkstyle jar (pin version as you prefer)
+          curl -L -o checkstyle.jar https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.2/checkstyle-10.12.2-all.jar
+
+          # Run Checkstyle with root-level config
+          java -jar checkstyle.jar -c checkstyle.xml src/main/java
