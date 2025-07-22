@@ -34,4 +34,8 @@ jobs:
       - name: Run SonarQube scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: sonar-scanner
+          JAVA_HOME: /opt/hostedtoolcache/Java_Adopt_jdk/17*/x64  # Force correct Java path
+          PATH: /opt/hostedtoolcache/Java_Adopt_jdk/17*/x64/bin:${{ env.PATH }}
+        run: |
+          java -version  # Check Java version
+          sonar-scanner
