@@ -6,6 +6,9 @@ on:
       java_version:
         required: true
         type: string
+    secrets:
+      SONAR_TOKEN:
+        required: true
 jobs:
   sonar_scan:
     runs-on: ubuntu-latest
