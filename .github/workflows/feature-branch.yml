@@ -12,7 +12,41 @@ on:
         required: false
 
 jobs:
+  # New Job: Extract a short branch name for deployment
+  set_review_branch:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_branch: ${{ steps.set.outputs.deploy_branch }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate safe deploy branch name
+        id: set
+        run: |
+          # Grab the branch name
+          branch="${GITHUB_REF##*/}"
+          echo "Original branch: $branch"
+
+          # Lowercase it
+          branch=$(echo "$branch" | tr '[:upper:]' '[:lower:]')
+
+          # Replace anything not alphanum or hyphen with hyphen
+          # This also replaces `/` → `-`
+          safe_branch=$(echo "$branch" | sed 's#[^a-z0-9-]#-#g')
+
+          # Collapse multiple dashes (optional)
+          safe_branch=$(echo "$safe_branch" | sed 's/-\{2,\}/-/g')
+
+          # Trim leading/trailing dashes (optional)
+          safe_branch=$(echo "$safe_branch" | sed 's/^-//' | sed 's/-$//')
+
+          echo "deploy_branch=$safe_branch" >> $GITHUB_OUTPUT
+          echo "Generated deploy branch: $safe_branch"
+
+
   checkstyle:
+    needs: set_review_branch
     uses: ./.github/workflows/checkstyle.yml
     with:
       java_version: ${{ inputs.java_version }}
