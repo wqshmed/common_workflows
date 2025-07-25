@@ -6,21 +6,43 @@ on:
       java_version:
         required: true
         type: string
+      image_name:
+        required: true
+        type: string
+    secrets:
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_PASSWORD:
+        required: true
 
 jobs:
   dockerize:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker
-        run: |
-          echo "Setting up Docker (dummy step)"
-          docker --version
+      - name: Set up JDK ${{ inputs.java_version }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: ${{ inputs.java_version }}
 
-      - name: Build Docker image (dummy)
+      - name: Build JAR with Maven
+        run: mvn clean package --batch-mode --no-transfer-progress
+
+      - name: Set up Docker
+        run: docker --version
+
+      - name: Build Docker image
         run: |
-          echo "Building Docker image..."
-          # docker build -t my-app:latest .
-          echo "✅ Dummy Docker build complete"
+          docker build -t ${{ inputs.image_name }}:${{ github.sha }} .
+
+      - name: Push Docker image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          docker push ${{ inputs.image_name }}:${{ github.sha }}
