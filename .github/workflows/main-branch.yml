@@ -7,9 +7,16 @@ on:
         default: 17
         required: false
         type: string
+      docker_image_name:
+        required: true
+        type: string
     secrets:
       SONAR_TOKEN:
         required: false
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_PASSWORD:
+        required: true
 
 jobs:
   checkstyle:

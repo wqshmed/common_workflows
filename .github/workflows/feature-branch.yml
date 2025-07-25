@@ -110,11 +110,13 @@ jobs:
         run: echo "Running Xray vulnerability scan..."
 
   deploy:
-    needs: [snyk_scan, xray_scan]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to environment
-        run: echo "Deploying to target environment..."
+    needs: [ snyk_scan, xray_scan ]
+    uses: ./.github/workflows/deploy_k8s.yml
+    with:
+      image: ${{ inputs.docker_image_name }}
+    secrets:
+      KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
+
 
   smoke_regression:
     needs: deploy
