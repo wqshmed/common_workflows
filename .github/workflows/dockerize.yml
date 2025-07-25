@@ -35,14 +35,15 @@ jobs:
       - name: Set up Docker
         run: docker --version
 
-      - name: Build Docker image
+      - name: Build Docker image with Git SHA + latest tags
         run: |
-          docker build -t ${{ inputs.image_name }}:${{ github.sha }} .
+          docker build -t ${{ inputs.image_name }}:latest -t ${{ inputs.image_name }}:${{ github.sha }} .
 
-      - name: Push Docker image
+      - name: Push Docker images
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          docker push ${{ inputs.image_name }}:latest
           docker push ${{ inputs.image_name }}:${{ github.sha }}
