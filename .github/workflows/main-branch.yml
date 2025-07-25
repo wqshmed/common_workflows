@@ -7,9 +7,16 @@ on:
         default: 17
         required: false
         type: string
+      docker_image_name:
+        required: true
+        type: string
     secrets:
       SONAR_TOKEN:
         required: false
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_PASSWORD:
+        required: true
 
 jobs:
   checkstyle:
@@ -44,10 +51,14 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   dockerize:
-    needs: [unit_tests, integration_tests, sonar_scan]
+    needs: [ unit_tests, integration_tests, sonar_scan ]
     uses: ./.github/workflows/dockerize.yml
     with:
       java_version: ${{ inputs.java_version }}
+      image_name: ${{ inputs.docker_image_name }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
   snyk_scan:
     needs: dockerize
