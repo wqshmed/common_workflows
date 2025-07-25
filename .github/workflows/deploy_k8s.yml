@@ -19,9 +19,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up kubeconfig
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
         run: |
           mkdir -p "$HOME/.kube"
-          echo "${{ secrets.KUBECONFIG_DATA }}" | base64 --decode > "$HOME/.kube/config"
+          echo "$KUBECONFIG_DATA" | base64 --decode > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
 
       - name: Verify Kubeconfig
