@@ -1,4 +1,5 @@
 name: Deploy to Kubernetes Cluster
+
 on:
   workflow_call:
     inputs:
@@ -12,21 +13,46 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
 
       - name: Set up kubeconfig
         env:
           KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
         run: |
-          mkdir -p $HOME/.kube
-          echo "$KUBECONFIG_DATA" | base64 -d > $HOME/.kube/config     // you can decode locally to see the content 'echo "<your secret value of $KUBECONFIG_DATA from koogle keep docs from Waqas>" | base64 -d'
+          mkdir -p "$HOME/.kube"
+          echo "$KUBECONFIG_DATA" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
 
-      - name: Update image
+      - name: Verify Kubeconfig
         run: |
-          sed -i "s|image:.*|image: ${{ inputs.image }}|" k8s/deployment.yaml
+          kubectl config current-context
+          kubectl get namespaces
 
-      - name: Apply manifests
+      - name: Install yq for YAML editing
+        run: |
+          sudo apt-get update && sudo apt-get install -y yq
+
+      - name: Update image in deployment.yaml
+        run: |
+          yq eval ".spec.template.spec.containers[0].image = \"${{ inputs.image }}\"" -i k8s/deployment.yaml
+
+      - name: Show updated deployment.yaml (for debugging)
+        run: cat k8s/deployment.yaml
+
+      - name: Dry-run validation of manifests
+        run: |
+          kubectl apply --dry-run=client -f k8s/deployment.yaml
+          kubectl apply --dry-run=client -f k8s/service.yaml
+
+      - name: Apply manifests to cluster
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
+
+      - name: Wait for rollout to complete
+        run: |
+          DEPLOY_NAME=$(yq eval ".metadata.name" k8s/deployment.yaml)
+          kubectl rollout status deployment/$DEPLOY_NAME
