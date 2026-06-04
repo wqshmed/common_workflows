@@ -45,8 +45,9 @@ jobs:
             -storepass changeit -noprompt -alias sonarcloud -file sonarcloud.crt
 
       - name: SonarCloud Scan
-        continue-on-error: true
         run: |
           mvn clean verify sonar:sonar \
             -Dsonar.projectKey=${{ inputs.project_key }} \
             -Dsonar.organization=${{ inputs.organization }} \
+            -Dsonar.host.url=${{ inputs.sonar_host_url }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
