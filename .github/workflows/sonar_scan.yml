@@ -6,6 +6,16 @@ on:
       java_version:
         required: true
         type: string
+      project_key:
+        required: true
+        type: string
+      organization:
+        required: true
+        type: string
+      sonar_host_url:
+        required: false
+        type: string
+        default: 'https://sonarcloud.io'
     secrets:
       SONAR_TOKEN:
         required: true
@@ -16,10 +26,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Java ${{ inputs.java_version }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: ${{ inputs.java_version }}
@@ -38,8 +48,5 @@ jobs:
         continue-on-error: true
         run: |
           mvn clean verify sonar:sonar \
-            -Dsonar.projectKey=java_crud_service \
-            -Dsonar.organization=wqshmed-sonar \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-      
+            -Dsonar.projectKey=${{ inputs.project_key }} \
+            -Dsonar.organization=${{ inputs.organization }} \
