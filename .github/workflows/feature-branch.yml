@@ -4,10 +4,16 @@ on:
   workflow_call:
     inputs:
       java_version:
-        default: 17
+        default: 21
         required: false
         type: string
-      docker_image_name:
+      image_name:
+        required: true
+        type: string
+      project_key:
+        required: true
+        type: string
+      organization:
         required: true
         type: string
     secrets:
@@ -19,6 +25,17 @@ on:
         required: true
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      java_version: ${{ steps.vars.outputs.java_version }}
+      image_name: ${{ steps.vars.outputs.image_name }}
+    steps:
+      - name: Set variables
+        id: vars
+        run: |
+          echo "java_version=${{ env.JAVA_VERSION }}" >> $GITHUB_OUTPUT
+          echo "image_name=${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
   # New Job: Extract a short branch name for deployment
   set_review_branch:
     runs-on: ubuntu-latest
@@ -51,7 +68,6 @@ jobs:
           echo "deploy_branch=$safe_branch" >> $GITHUB_OUTPUT
           echo "Generated deploy branch: $safe_branch"
 
-
   checkstyle:
     needs: set_review_branch
     uses: ./.github/workflows/checkstyle.yml
@@ -63,6 +79,20 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       java_version: ${{ inputs.java_version }}
+
+  snyk_scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Snyk Scan
+        run: echo "Running Snyk security scan..."
+
+  xray_scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Xray Scan
+        run: echo "Running Xray vulnerability scan..."
 
   unit_tests:
     needs: build
@@ -81,36 +111,23 @@ jobs:
     uses: ./.github/workflows/sonar_scan.yml
     with:
       java_version: ${{ inputs.java_version }}
+      project_key: ${{ steps.vars.outputs.project_key }}
+      organization: ${{ steps.vars.outputs.organization }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   dockerize:
-    needs: [ unit_tests, integration_tests, sonar_scan ]
+    needs: [ unit_tests, integration_tests ]
     uses: ./.github/workflows/dockerize.yml
     with:
       java_version: ${{ inputs.java_version }}
-      image_name: ${{ inputs.docker_image_name }}
+      image_name: ${{ inputs.image_name }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-
-  snyk_scan:
-    needs: dockerize
-    runs-on: ubuntu-latest
-    steps:
-      - name: Snyk Scan
-        run: echo "Running Snyk security scan..."
-
-  xray_scan:
-    needs: dockerize
-    runs-on: ubuntu-latest
-    steps:
-      - name: Xray Scan
-        run: echo "Running Xray vulnerability scan..."
-
   deploy:
-    needs: [snyk_scan, xray_scan]
+    needs: dockerize
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to environment
@@ -123,14 +140,14 @@ jobs:
       - name: Smoke & Regression Tests
         run: echo "Executing smoke & regression tests..."
 
-  dev_review_approved:
+  dev_review_approval:
     needs: smoke_regression
     runs-on: ubuntu-latest
     steps:
       - name: Dev Code Review Complete & Approved
         run: echo "Dev team reviewed & approved."
 
-  qa_review_approved:
+  qa_review_approval:
     needs: smoke_regression
     runs-on: ubuntu-latest
     steps:
@@ -138,20 +155,20 @@ jobs:
         run: echo "QA team reviewed & approved."
 
   full_regression:
-    needs: [dev_review_approved, qa_review_approved]
+    needs: [dev_review_approval, qa_review_approval]
     runs-on: ubuntu-latest
     steps:
       - name: Full Regression Tests
         run: echo "Running full regression suite..."
 
-  dev_review_for_merge:
+  dev_review_for_merge_to_main:
     needs: full_regression
     runs-on: ubuntu-latest
     steps:
       - name: Dev Review for Merge
         run: echo "Dev team reviewing for merge..."
 
-  qa_review_for_merge:
+  qa_review_for_merge_to_main:
     needs: full_regression
     runs-on: ubuntu-latest
     steps:
