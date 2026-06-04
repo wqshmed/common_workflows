@@ -47,6 +47,8 @@ jobs:
     uses: ./.github/workflows/sonar_scan.yml
     with:
       java_version: ${{ inputs.java_version }}
+      project_key: ${{ inputs.project_key }}
+      organization: ${{ inputs.organization }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -55,7 +57,7 @@ jobs:
     uses: ./.github/workflows/dockerize.yml
     with:
       java_version: ${{ inputs.java_version }}
-      image_name: ${{ inputs.docker_image_name }}
+      image_name: ${{ inputs.image_name }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

@@ -111,8 +111,8 @@ jobs:
     uses: ./.github/workflows/sonar_scan.yml
     with:
       java_version: ${{ inputs.java_version }}
-      project_key: ${{ steps.vars.outputs.project_key }}
-      organization: ${{ steps.vars.outputs.organization }}
+      project_key: ${{ inputs.project_key }}
+      organization: ${{ inputs.organization }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
