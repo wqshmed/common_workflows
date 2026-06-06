@@ -10,10 +10,10 @@ on:
       image_name:
         required: true
         type: string
-      project_key:
+      sonar_project_key:
         required: true
         type: string
-      organization:
+      sonar_organization:
         required: true
         type: string
     secrets:
@@ -100,8 +100,8 @@ jobs:
     uses: ./.github/workflows/sonar_scan.yml
     with:
       java_version: ${{ inputs.java_version }}
-      project_key: ${{ inputs.project_key }}
-      organization: ${{ inputs.organization }}
+      sonar_project_key: ${{ inputs.sonar_project_key }}
+      sonar_organization: ${{ inputs.sonar_organization }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
