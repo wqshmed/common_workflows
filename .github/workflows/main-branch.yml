@@ -10,6 +10,12 @@ on:
       image_name:
         required: true
         type: string
+      project_key:
+        required: true
+        type: string
+      organization:
+        required: true
+        type: string
     secrets:
       SONAR_TOKEN:
         required: false
@@ -19,16 +25,53 @@ on:
         required: true
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      java_version: ${{ steps.vars.outputs.java_version }}
+      image_name: ${{ steps.vars.outputs.image_name }}
+    steps:
+      - name: Set variables
+        id: vars
+        run: |
+          echo "java_version=${{ env.JAVA_VERSION }}" >> $GITHUB_OUTPUT
+          echo "image_name=${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+
+  build:
+    needs: setup
+    uses: ./.github/workflows/build.yml
+    with:
+      java_version: ${{ inputs.java_version }}
+
   checkstyle:
+    needs: build
     uses: ./.github/workflows/checkstyle.yml
     with:
       java_version: ${{ inputs.java_version }}
 
-  build:
-    needs: checkstyle
-    uses: ./.github/workflows/build.yml
+  snyk_scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Snyk Scan
+        run: echo "Running Snyk security scan..."
+
+  xray_scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Xray Scan
+        run: echo "Running Xray vulnerability scan..."
+
+  sonar_scan:
+    needs: build
+    uses: ./.github/workflows/sonar_scan.yml
     with:
       java_version: ${{ inputs.java_version }}
+      project_key: ${{ inputs.project_key }}
+      organization: ${{ inputs.organization }}
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   unit_tests:
     needs: build
@@ -42,18 +85,9 @@ jobs:
     with:
       java_version: ${{ inputs.java_version }}
 
-  sonar_scan:
-    needs: build
-    uses: ./.github/workflows/sonar_scan.yml
-    with:
-      java_version: ${{ inputs.java_version }}
-      project_key: ${{ inputs.project_key }}
-      organization: ${{ inputs.organization }}
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   dockerize:
-    needs: [ unit_tests, integration_tests, sonar_scan ]
+    needs: [ unit_tests, integration_tests ]
     uses: ./.github/workflows/dockerize.yml
     with:
       java_version: ${{ inputs.java_version }}
@@ -62,64 +96,71 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-  snyk_scan:
+  deploy_dev_env:
     needs: dockerize
     runs-on: ubuntu-latest
     steps:
-      - name: Snyk Scan
-        run: echo "Running Snyk security scan..."
+      - name: Deploy to environment
+        run: echo "Deploying to target environment..."
 
-  xray_scan:
-    needs: dockerize
+  smoke_tests_dev_env:
+    needs: deploy_dev_env
     runs-on: ubuntu-latest
     steps:
-      - name: Xray Scan
-        run: echo "Running Xray vulnerability scan..."
+      - name: Smoke & Regression Tests
+        run: echo "Executing smoke & regression tests..."
 
-  deploy_dev:
-    needs: [snyk_scan, xray_scan]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to DEV
-        run: echo "Deploying to DEV environment..."
-
-  full_regression_dev:
-    needs: deploy_dev
+  full_regression_dev_env:
+    needs: smoke_tests_dev_env
     runs-on: ubuntu-latest
     steps:
       - name: Full Regression after DEV Deploy (Dummy)
         run: echo "Running full regression on DEV..."
 
-  deploy_test:
-    needs: full_regression_dev
+  deploy_test_env:
+    needs: dockerize
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to TEST
         run: echo "Deploying to TEST environment..."
 
-  full_regression_test:
-    needs: deploy_test
+  smoke_tests_test_env:
+    needs: deploy_test_env
+    runs-on: ubuntu-latest
+    steps:
+      - name: Smoke & Regression Tests
+        run: echo "Executing smoke & regression tests..."
+
+  full_regression_test_env:
+    needs: smoke_tests_test_env
     runs-on: ubuntu-latest
     steps:
       - name: Full Regression after TEST Deploy (Dummy)
         run: echo "Running full regression on TEST..."
 
-  deploy_stage:
-    needs: full_regression_test
+  deploy_stage_env:
+    needs: dockerize
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to STAGE
-        run: echo "Deploying to STAGE environment..."
+      - name: Deploy to Stage
+        run: echo "Deploying to Stage environment..."
 
-  full_regression_stage:
-    needs: deploy_stage
+  smoke_tests_stage_env:
+    needs: deploy_stage_env
     runs-on: ubuntu-latest
     steps:
-      - name: Full Regression after STAGE Deploy
-        run: echo "Running full regression on STAGE..."
+      - name: Smoke & Regression Tests
+        run: echo "Executing smoke & regression tests..."
+
+  full_regression_stage_env:
+    needs: smoke_tests_stage_env
+    runs-on: ubuntu-latest
+    steps:
+      - name: Full Regression after Stage Deploy (Dummy)
+        run: echo "Running full regression on Stage..."
 
   release_go_nogo:
-    needs: full_regression_stage
+    needs: full_regression_stage_env
     runs-on: ubuntu-latest
     steps:
       - name: Release Go/NoGo
